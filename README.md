@@ -1,4 +1,4 @@
-#S9180-32X Driver
+# S9180-32X Driver
 Tested on ubuntu 24.04 LTS
 
 Dependencies:
