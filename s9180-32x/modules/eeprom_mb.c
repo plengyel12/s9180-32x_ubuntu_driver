@@ -23,6 +23,7 @@
 #include <linux/jiffies.h>
 #include <linux/i2c.h>
 #include <linux/mutex.h>
+#include <linux/string.h>
 
 /* Addresses to scan */
 static const unsigned short normal_i2c[] = { I2C_CLIENT_END };
@@ -99,7 +100,7 @@ static ssize_t mb_eeprom_read(struct file *filp, struct kobject *kobj,
 	u8 slice;
 
 	if (off > EEPROM_SIZE) {
-		return 0;
+		return -EINVAL;
 	}
 	if (off + count > EEPROM_SIZE) {
 		count = EEPROM_SIZE - off;
@@ -144,13 +145,12 @@ static int mb_eeprom_detect(struct i2c_client *client, struct i2c_board_info *in
 		return -ENODEV;
 	}
 
-	strlcpy(info->type, "eeprom", I2C_NAME_SIZE);
+	strscpy(info->type, "eeprom", I2C_NAME_SIZE);
 
 	return 0;
 }
 
-static int mb_eeprom_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int mb_eeprom_probe(struct i2c_client *client)
 {
 	struct eeprom_data *data;
 	int err;
@@ -178,12 +178,10 @@ exit:
 	return err;
 }
 
-static int mb_eeprom_remove(struct i2c_client *client)
+static void mb_eeprom_remove(struct i2c_client *client)
 {
 	sysfs_remove_bin_file(&client->dev.kobj, &mb_eeprom_attr);
 	kfree(i2c_get_clientdata(client));
-
-	return 0;
 }
 
 static const struct i2c_device_id mb_eeprom_id[] = {
@@ -199,7 +197,7 @@ static struct i2c_driver mb_eeprom_driver = {
 	.remove		= mb_eeprom_remove,
 	.id_table	= mb_eeprom_id,
 
-	.class		= I2C_CLASS_DDC | I2C_CLASS_SPD,
+	.class		= I2C_CLASS_SPD,
 	.detect		= mb_eeprom_detect,
 	.address_list	= normal_i2c,
 };
